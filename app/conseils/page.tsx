@@ -6,6 +6,8 @@ import { redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
+import { RecommendationsPanel } from "./recommendations";
+import { queueUpcomingHarvestReminders } from "./actions";
 
 export const metadata: Metadata = {
   title: "Calendrier et alertes agricoles — Agriflow Africa",
@@ -16,7 +18,7 @@ export const instant = false;
 export default async function AdvicePage({
   searchParams,
 }: {
-  searchParams: Promise<{ cooperative?: string }>;
+  searchParams: Promise<{ cooperative?: string; smsQueued?: string }>;
 }) {
   await connection();
   if (!process.env.DATABASE_URL) {
@@ -72,7 +74,7 @@ export default async function AdvicePage({
       <section className="module-hero">
         <p className="eyebrow eyebrow-dark"><span /> CALENDRIER DE CULTURE</p>
         <h1>Conseils & alertes.</h1>
-        <p>Repères simples calculés à partir des dates de récolte et rendements saisis par votre coopérative. Il ne s’agit pas de prédictions IA ni d’un avis agronomique.</p>
+        <p>Repères calculés à partir des cultures enregistrées, avec des recommandations IA facultatives lorsque le fournisseur est configuré. Vérifiez toujours les conseils auprès d’un professionnel local.</p>
       </section>
       {memberships.length > 1 && (
         <nav className="module-coop-nav" aria-label="Choisir une coopérative">
@@ -82,6 +84,13 @@ export default async function AdvicePage({
             </Link>
           ))}
         </nav>
+      )}
+      {params.smsQueued !== undefined && (
+        <p className="form-notice" role="status">
+          {Number.isInteger(Number(params.smsQueued)) && Number(params.smsQueued) > 0
+            ? `${params.smsQueued} rappel(s) SMS mis en file; vérifiez leur statut dans les notifications.`
+            : "Aucun nouveau rappel à mettre en file. Vérifiez qu’une récolte est prévue sous sept jours et que le producteur a consenti aux SMS."}
+        </p>
       )}
       {crops.length ? (
         <section className="advice-grid">
@@ -109,7 +118,21 @@ export default async function AdvicePage({
       ) : (
         <ModuleNotice title="Aucune culture enregistrée" text="Ajoutez des fermes et des cultures à votre coopérative pour générer le calendrier." />
       )}
-      <p className="module-disclaimer">Ces rappels utilisent uniquement les informations saisies dans Agriflow. Ils ne remplacent pas l’accompagnement d’un conseiller agricole.</p>
+      <RecommendationsPanel
+        cooperativeId={cooperativeId}
+        crops={crops.map(({ id, name }) => ({ id, name }))}
+      />
+      {crops.length > 0 && (
+        <section className="module-form-panel">
+          <h2>Rappels SMS de récolte</h2>
+          <p className="panel-note">Met en file un rappel unique pour les récoltes prévues dans les sept prochains jours. Les SMS ne partent qu’aux producteurs consentants; si Termii est configuré, des frais de message peuvent s’appliquer.</p>
+          <form action={queueUpcomingHarvestReminders}>
+            <input name="cooperativeId" type="hidden" value={cooperativeId} />
+            <button className="button button-secondary" type="submit">Mettre en file les rappels</button>
+          </form>
+        </section>
+      )}
+      <p className="module-disclaimer">Les rappels utilisent les informations saisies dans Agriflow. Les recommandations générées automatiquement sont indicatives, ne diagnostiquent pas les maladies et ne remplacent pas l’accompagnement d’un conseiller agricole.</p>
     </main>
   );
 }

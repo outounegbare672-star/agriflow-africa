@@ -14,6 +14,35 @@ enum CooperativeRole {
   PRODUCER
 }
 
+enum TraceabilityEventType {
+  HARVEST_RECORDED
+  QUALITY_CHECKED
+  STORED
+  DISPATCHED
+  RECEIVED
+}
+
+enum SmsCategory {
+  HARVEST
+  WEATHER
+  PAYMENT
+  MARKET
+}
+
+enum SmsStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum MobileMoneyCheckoutStatus {
+  CREATED
+  PENDING
+  PAID
+  FAILED
+}
+
 model User {
   id              String       @id @default(cuid())
   name            String
@@ -24,6 +53,8 @@ model User {
   sentInvitations Invitation[] @relation("InvitationSender")
   sessions        Session[]
   accounts        Account[]
+  aiRecommendationRequests AiRecommendationRequest[]
+  mobileMoneyCheckouts MobileMoneyCheckout[]
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 }
@@ -68,6 +99,14 @@ model Verification {
   @@index([identifier])
 }
 
+model AiRecommendationRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
 model Cooperative {
   id        String     @id @default(cuid())
   name      String
@@ -84,6 +123,8 @@ model Cooperative {
   marketListings MarketListing[]
   priceReports PriceReport[]
   transportRequests TransportRequest[]
+  smsNotifications SmsNotification[]
+  mobileMoneyCheckouts MobileMoneyCheckout[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
@@ -124,11 +165,14 @@ model Producer {
   gender        String
   photo         String?
   identityCard  String?
+  smsConsent    Boolean      @default(false)
+  smsConsentAt  DateTime?
   cooperativeId String
   cooperative   Cooperative  @relation(fields: [cooperativeId], references: [id])
   farms         Farm[]
   harvests      Harvest[]
   payments      Payment[]
+  smsNotifications SmsNotification[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -138,6 +182,8 @@ model Farm {
   name          String
   gpsLocation   String
   area          Float
+  latitude      Float?
+  longitude     Float?
   producerId    String
   producer      Producer    @relation(fields: [producerId], references: [id])
   cooperativeId String
@@ -161,6 +207,7 @@ model Crop {
 
 model Harvest {
   id         String   @id @default(cuid())
+  batchCode  String   @unique @default(cuid())
   quantity   Float
   date       DateTime
   photos     String[]
@@ -169,7 +216,39 @@ model Harvest {
   cropId     String
   crop       Crop     @relation(fields: [cropId], references: [id])
   stocks     Stock[]
+  traceabilityEvents TraceabilityEvent[]
   createdAt  DateTime @default(now())
+}
+
+model TraceabilityEvent {
+  id         String                @id @default(cuid())
+  type       TraceabilityEventType
+  note       String
+  location   String?
+  eventDate  DateTime              @default(now())
+  harvestId  String
+  harvest    Harvest               @relation(fields: [harvestId], references: [id], onDelete: Cascade)
+  createdAt  DateTime              @default(now())
+  @@index([harvestId, eventDate])
+}
+
+model SmsNotification {
+  id                 String      @id @default(cuid())
+  category           SmsCategory
+  toPhone            String
+  message            String
+  status             SmsStatus   @default(PENDING)
+  dedupeKey          String?     @unique
+  providerReference  String?
+  error              String?
+  cooperativeId      String
+  cooperative        Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  producerId         String?
+  producer           Producer?   @relation(fields: [producerId], references: [id], onDelete: SetNull)
+  createdAt          DateTime    @default(now())
+  sentAt             DateTime?
+  @@index([cooperativeId, createdAt])
+  @@index([status, createdAt])
 }
 
 model Stock {
@@ -210,11 +289,34 @@ model MarketListing {
   pricePerUnit  Float?
   cooperativeId String
   cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  mobileMoneyCheckouts MobileMoneyCheckout[]
   active        Boolean     @default(true)
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   @@index([active, createdAt])
   @@index([cooperativeId, active])
+}
+
+model MobileMoneyCheckout {
+  id                  String                    @id @default(cuid())
+  transactionId       String                    @unique
+  amount              Int
+  currency            String
+  paymentUrl          String?
+  providerReference   String?
+  status              MobileMoneyCheckoutStatus @default(CREATED)
+  buyerId             String
+  buyer               User                      @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  cooperativeId       String
+  cooperative         Cooperative               @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  marketListingId     String
+  marketListing       MarketListing             @relation(fields: [marketListingId], references: [id], onDelete: Cascade)
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  completedAt         DateTime?
+  @@index([buyerId, createdAt])
+  @@index([cooperativeId, createdAt])
+  @@index([marketListingId, status])
 }
 
 model PriceReport {

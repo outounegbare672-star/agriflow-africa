@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
+import { queueCooperativeSms } from "@/lib/sms";
 import { getWestAfricanCountry } from "@/lib/west-africa";
 
 async function requireUser() {
@@ -73,8 +74,12 @@ export async function createProducer(data: FormData) {
   const lastName = text(data, "lastName");
   const phone = text(data, "phone");
   const village = text(data, "village");
+  const smsConsent = data.get("smsConsent") === "on";
   if (firstName.length < 2 || lastName.length < 2 || phone.length < 6 || village.length < 2) {
     dashboardRedirect(cooperativeId, "error=invalid-producer");
+  }
+  if (smsConsent && !/^\+[1-9]\d{7,14}$/.test(phone)) {
+    dashboardRedirect(cooperativeId, "error=invalid-sms-phone");
   }
 
   await getPrisma().producer.create({
@@ -84,10 +89,45 @@ export async function createProducer(data: FormData) {
       phone,
       village,
       gender: "Non renseigné",
+      smsConsent,
+      smsConsentAt: smsConsent ? new Date() : null,
       cooperativeId,
     },
   });
   dashboardRedirect(cooperativeId, "created=producer");
+}
+
+export async function setProducerSmsConsent(data: FormData) {
+  const user = await requireUser();
+  const cooperativeId = await requireCooperative(user.id, text(data, "cooperativeId"));
+  const producerId = text(data, "producerId");
+  const consent = text(data, "consent");
+  if (consent !== "true" && consent !== "false") {
+    dashboardRedirect(cooperativeId, "error=invalid-sms-consent");
+  }
+
+  const producer = await getPrisma().producer.findFirst({
+    where: { id: producerId, cooperativeId },
+    select: { id: true, phone: true },
+  });
+  if (!producer) dashboardRedirect(cooperativeId, "error=invalid-producer");
+  if (consent === "true" && !/^\+[1-9]\d{7,14}$/.test(producer.phone)) {
+    dashboardRedirect(cooperativeId, "error=invalid-sms-phone");
+  }
+
+  await getPrisma().$transaction(async (tx) => {
+    await tx.producer.update({
+      where: { id: producer.id },
+      data: { smsConsent: consent === "true", smsConsentAt: consent === "true" ? new Date() : null },
+    });
+    if (consent === "false") {
+      await tx.smsNotification.updateMany({
+        where: { producerId: producer.id, status: "PENDING" },
+        data: { status: "CANCELLED", error: "Consentement SMS retiré." },
+      });
+    }
+  });
+  dashboardRedirect(cooperativeId, consent === "true" ? "created=sms-consent" : "created=sms-consent-withdrawn");
 }
 
 export async function createFarmAndCrop(data: FormData) {
@@ -96,6 +136,10 @@ export async function createFarmAndCrop(data: FormData) {
   const producerId = text(data, "producerId");
   const farmName = text(data, "farmName");
   const gpsLocation = text(data, "gpsLocation");
+  const latitudeInput = text(data, "latitude");
+  const longitudeInput = text(data, "longitude");
+  const latitude = latitudeInput ? Number(latitudeInput) : null;
+  const longitude = longitudeInput ? Number(longitudeInput) : null;
   const area = number(data, "area");
   const cropName = text(data, "cropName");
   const estimatedYield = number(data, "estimatedYield");
@@ -103,7 +147,14 @@ export async function createFarmAndCrop(data: FormData) {
 
   if (
     !farmName || !gpsLocation || area <= 0 || !cropName || estimatedYield < 0 ||
-    Number.isNaN(expectedHarvest.getTime())
+    Number.isNaN(expectedHarvest.getTime()) ||
+    (latitudeInput !== "" && (
+      latitude === null || !Number.isFinite(latitude) || latitude < -90 || latitude > 90
+    )) ||
+    (longitudeInput !== "" && (
+      longitude === null || !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+    )) ||
+    (latitudeInput === "") !== (longitudeInput === "")
   ) dashboardRedirect(cooperativeId, "error=invalid-farm");
 
   const prisma = getPrisma();
@@ -118,6 +169,8 @@ export async function createFarmAndCrop(data: FormData) {
       name: farmName,
       gpsLocation,
       area,
+      latitude,
+      longitude,
       producerId,
       cooperativeId,
       crops: {
@@ -151,15 +204,33 @@ export async function recordHarvest(data: FormData) {
   });
   if (!crop) dashboardRedirect(cooperativeId, "error=invalid-crop");
 
-  await prisma.$transaction(async (tx) => {
+  const harvest = await prisma.$transaction(async (tx) => {
     const harvest = await tx.harvest.create({
       data: { cropId: crop.id, producerId: crop.farm.producerId, quantity, date, photos: [] },
+    });
+    await tx.traceabilityEvent.create({
+      data: {
+        harvestId: harvest.id,
+        type: "HARVEST_RECORDED",
+        note: "Récolte enregistrée par la coopérative.",
+      },
     });
     await tx.stock.create({
       data: { type: crop.name, quantity, harvestId: harvest.id },
     });
+    return harvest;
   });
-  dashboardRedirect(cooperativeId, "created=harvest");
+  const sms = await queueCooperativeSms(
+    cooperativeId,
+    "HARVEST",
+    `Agriflow : récolte de ${crop.name} enregistrée (${quantity} kg). Lot ${harvest.batchCode}.`,
+    [crop.farm.producerId],
+    `harvest:${harvest.id}`,
+  );
+  dashboardRedirect(
+    cooperativeId,
+    sms.queued && !sms.sent ? "created=harvest-sms-pending" : "created=harvest",
+  );
 }
 
 export async function recordPayment(data: FormData) {
@@ -176,12 +247,26 @@ export async function recordPayment(data: FormData) {
   const prisma = getPrisma();
   const producer = await prisma.producer.findFirst({
     where: { id: producerId, cooperativeId },
-    select: { id: true },
+    select: { id: true, firstName: true },
   });
   if (!producer) dashboardRedirect(cooperativeId, "error=invalid-producer");
 
-  await prisma.payment.create({
+  const payment = await prisma.payment.create({
     data: { producerId, cooperativeId, amount, method, reference },
   });
-  dashboardRedirect(cooperativeId, "created=payment");
+  const cooperative = await prisma.cooperative.findUniqueOrThrow({
+    where: { id: cooperativeId },
+    select: { currency: true },
+  });
+  const sms = await queueCooperativeSms(
+    cooperativeId,
+    "PAYMENT",
+    `Agriflow : un paiement de ${amount} ${cooperative.currency} a été enregistré pour vous. Réf. ${reference}.`,
+    [producer.id],
+    `payment:${payment.id}`,
+  );
+  dashboardRedirect(
+    cooperativeId,
+    sms.queued && !sms.sent ? "created=payment-sms-pending" : "created=payment",
+  );
 }

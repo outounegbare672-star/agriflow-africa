@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAuth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
+import { queueCooperativeSms } from "@/lib/sms";
 
 async function requireWriter(cooperativeId: string) {
   const session = await getAuth().api.getSession({ headers: await headers() });
@@ -53,7 +54,7 @@ export async function createMarketListing(data: FormData) {
     back(cooperativeId, "error=invalid-listing");
   }
 
-  await getPrisma().marketListing.create({
+  const listing = await getPrisma().marketListing.create({
     data: {
       cooperativeId,
       title,
@@ -63,17 +64,47 @@ export async function createMarketListing(data: FormData) {
       pricePerUnit: price,
     },
   });
-  back(cooperativeId, "created=listing");
+  const sms = await queueCooperativeSms(
+    cooperativeId,
+    "MARKET",
+    `Agriflow : nouvelle offre ${crop} publiée par votre coopérative. Consultez le marché.`,
+    undefined,
+    `listing:${listing.id}:published`,
+  );
+  back(
+    cooperativeId,
+    sms.failed
+      ? "created=listing-sms-failed"
+      : sms.queued > sms.sent ? "created=listing-sms-pending" : "created=listing",
+  );
 }
 
 export async function closeMarketListing(data: FormData) {
   const cooperativeId = await requireWriter(value(data, "cooperativeId"));
   const listingId = value(data, "listingId");
+  const listing = await getPrisma().marketListing.findFirst({
+    where: { id: listingId, cooperativeId, active: true },
+    select: { id: true, title: true, crop: true },
+  });
+  if (!listing) back(cooperativeId, "error=listing-not-found");
   const result = await getPrisma().marketListing.updateMany({
     where: { id: listingId, cooperativeId, active: true },
     data: { active: false },
   });
-  back(cooperativeId, result.count ? "created=listing-closed" : "error=listing-not-found");
+  if (!result.count) back(cooperativeId, "error=listing-not-found");
+  const sms = await queueCooperativeSms(
+    cooperativeId,
+    "MARKET",
+    `Agriflow : l’offre ${listing.title} (${listing.crop}) a été clôturée.`,
+    undefined,
+    `listing:${listing.id}:closed`,
+  );
+  back(
+    cooperativeId,
+    sms.failed
+      ? "created=listing-closed-sms-failed"
+      : sms.queued > sms.sent ? "created=listing-closed-sms-pending" : "created=listing-closed",
+  );
 }
 
 export async function createPriceReport(data: FormData) {

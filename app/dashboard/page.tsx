@@ -8,18 +8,21 @@ import { getPrisma } from "@/lib/prisma";
 import { getWestAfricanCountry, westAfricanCountries } from "@/lib/west-africa";
 import { LogoutButton } from "./logout-button";
 import { InviteMemberForm } from "./invite-member-form";
+import { LocationFields } from "./location-fields";
 import {
   createCooperative,
   createFarmAndCrop,
   createProducer,
   recordHarvest,
   recordPayment,
+  setProducerSmsConsent,
 } from "./actions";
 import {
   closeMarketListing,
   createMarketListing,
   createPriceReport,
 } from "./market-actions";
+import { addTraceabilityEvent } from "@/app/tracabilite/actions";
 
 export const metadata: Metadata = {
   title: "Espace de gestion — Agriflow Africa",
@@ -129,7 +132,7 @@ export default async function DashboardPage({
       prisma.producer.findMany({
         where: { cooperativeId },
         orderBy: { createdAt: "desc" },
-        select: { id: true, firstName: true, lastName: true, village: true, phone: true },
+        select: { id: true, firstName: true, lastName: true, village: true, phone: true, smsConsent: true },
         take: 50,
       }),
       prisma.crop.findMany({
@@ -142,7 +145,7 @@ export default async function DashboardPage({
         where: { producer: { cooperativeId } },
         orderBy: { date: "desc" },
         select: {
-          id: true, quantity: true, date: true,
+          id: true, batchCode: true, quantity: true, date: true,
           producer: { select: { firstName: true, lastName: true } },
           crop: { select: { name: true } },
         },
@@ -201,6 +204,22 @@ export default async function DashboardPage({
       take: 5,
     }),
   ]);
+  const [farms, smsNotifications] = await Promise.all([
+    prisma.farm.findMany({
+      where: { cooperativeId },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, name: true, gpsLocation: true, latitude: true, longitude: true },
+      take: 20,
+    }),
+    prisma.smsNotification.findMany({
+      where: { cooperativeId },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, category: true, toPhone: true, message: true, status: true, createdAt: true,
+      },
+      take: 6,
+    }),
+  ]);
 
   return (
     <main className="dashboard-shell">
@@ -226,6 +245,9 @@ export default async function DashboardPage({
         <Link href="/prix">Prix relevés ↗</Link>
         <Link href={`/transport?cooperative=${encodeURIComponent(cooperativeId)}`}>Transport ↗</Link>
         <Link href={`/conseils?cooperative=${encodeURIComponent(cooperativeId)}`}>Conseils & alertes ↗</Link>
+        <Link href={`/meteo?cooperative=${encodeURIComponent(cooperativeId)}`}>Météo des parcelles ↗</Link>
+        <Link href={`/statistiques?cooperative=${encodeURIComponent(cooperativeId)}`}>Statistiques régionales ↗</Link>
+        <Link href="/notifications">Notifications SMS ↗</Link>
       </nav>
 
       <details className="dashboard-panel cooperative-create-panel" id="nouvelle-cooperative" open={params.newCooperative === "1"}>
@@ -300,6 +322,10 @@ export default async function DashboardPage({
               <label>Téléphone<input name="phone" type="tel" minLength={6} required /></label>
               <label>Village<input name="village" minLength={2} required /></label>
             </div>
+            <label className="consent-check">
+              <input name="smsConsent" type="checkbox" />
+              Le producteur consent à recevoir les alertes de récolte, météo, paiement et marketplace par SMS; il peut retirer son consentement auprès de la coopérative.
+            </label>
             <button className="button button-primary" type="submit">Ajouter le producteur</button>
           </form>
           )}
@@ -307,7 +333,15 @@ export default async function DashboardPage({
             {producers.length ? producers.map((producer) => (
               <div className="record-row" key={producer.id}>
                 <span><strong>{producer.firstName} {producer.lastName}</strong><small>{producer.village} · {producer.phone}</small></span>
-                <span className="record-tag">Producteur</span>
+                <span className={`record-tag ${producer.smsConsent ? "status-open" : ""}`}>{producer.smsConsent ? "SMS autorisés" : "SMS désactivés"}</span>
+                {canManage && (
+                  <form action={setProducerSmsConsent}>
+                    <input name="cooperativeId" type="hidden" value={cooperativeId} />
+                    <input name="producerId" type="hidden" value={producer.id} />
+                    <input name="consent" type="hidden" value={producer.smsConsent ? "false" : "true"} />
+                    <button className="record-action" type="submit">{producer.smsConsent ? "Retirer le consentement" : "Autoriser les SMS"}</button>
+                  </form>
+                )}
               </div>
             )) : <p className="empty-state">Aucun producteur enregistré pour le moment.</p>}
           </div>
@@ -328,7 +362,7 @@ export default async function DashboardPage({
               <label>Nom de la ferme<input name="farmName" required /></label>
               <label>Superficie (ha)<input name="area" min="0.01" step="0.01" type="number" required /></label>
             </div>
-            <label>Village ou coordonnées GPS<input name="gpsLocation" required /></label>
+            <LocationFields />
             <div className="form-row">
               <label>Culture<input name="cropName" required /></label>
               <label>Récolte prévue<input name="expectedHarvest" type="date" required /></label>
@@ -345,6 +379,17 @@ export default async function DashboardPage({
               </div>
             ))}
             {!crops.length && <p className="empty-state">Ajoutez un producteur puis sa ferme et ses cultures.</p>}
+            {farms.map((farm) => (
+              <div className="record-row" key={farm.id}>
+                <span>
+                  <strong>{farm.name}</strong>
+                  <small>{farm.gpsLocation}{farm.latitude !== null && farm.longitude !== null ? ` · ${farm.latitude.toFixed(5)}, ${farm.longitude.toFixed(5)}` : ""}</small>
+                </span>
+                {farm.latitude !== null && farm.longitude !== null ? (
+                  <a className="record-action" href={`https://www.openstreetmap.org/?mlat=${farm.latitude}&mlon=${farm.longitude}#map=15/${farm.latitude}/${farm.longitude}`} rel="noreferrer" target="_blank">Voir la carte ↗</a>
+                ) : <span className="record-tag">GPS à compléter</span>}
+              </div>
+            ))}
           </div>
         </div>
 
@@ -373,8 +418,26 @@ export default async function DashboardPage({
           <div className="record-list">
             {harvests.map((harvest) => (
               <div className="record-row" key={harvest.id}>
-                <span><strong>{harvest.crop.name} · {numberFormat.format(harvest.quantity)} kg</strong><small>{harvest.producer.firstName} {harvest.producer.lastName} · {harvest.date.toLocaleDateString("fr-FR")}</small></span>
-                <span className="record-tag">Récolte</span>
+                <span>
+                  <strong>{harvest.crop.name} · {numberFormat.format(harvest.quantity)} kg</strong>
+                  <small>{harvest.producer.firstName} {harvest.producer.lastName} · {harvest.date.toLocaleDateString("fr-FR")}</small>
+                  <Link className="text-link" href={`/tracabilite/${encodeURIComponent(harvest.batchCode)}`}>Lot {harvest.batchCode} ↗</Link>
+                </span>
+                {canManage && (
+                  <form action={addTraceabilityEvent} className="traceability-event-form">
+                    <input name="cooperativeId" type="hidden" value={cooperativeId} />
+                    <input name="harvestId" type="hidden" value={harvest.id} />
+                    <select aria-label="Étape de traçabilité" name="type" defaultValue="QUALITY_CHECKED">
+                      <option value="QUALITY_CHECKED">Qualité vérifiée</option>
+                      <option value="STORED">Stockée</option>
+                      <option value="DISPATCHED">Expédiée</option>
+                      <option value="RECEIVED">Reçue</option>
+                    </select>
+                    <input aria-label="Note de traçabilité" maxLength={300} minLength={3} name="note" placeholder="Note d’étape" required />
+                    <input aria-label="Lieu (village/ville)" maxLength={80} name="location" placeholder="Lieu (facultatif)" />
+                    <button className="record-action" type="submit">Ajouter étape</button>
+                  </form>
+                )}
               </div>
             ))}
             {!harvests.length && <p className="empty-state">Les récoltes enregistrées apparaîtront ici.</p>}
@@ -443,7 +506,7 @@ export default async function DashboardPage({
 
         <div className="dashboard-panel">
           <PanelHeading eyebrow="COMPTABILITÉ" title="Suivi des paiements" />
-          <p className="panel-note">Registre de paiements uniquement : aucun argent n’est encaissé par Agriflow.</p>
+          <p className="panel-note">Registre manuel uniquement : aucun argent n’est encaissé. Les essais CinetPay TMoney/Moov restent désactivés jusqu’à la configuration des identifiants sandbox.</p>
           {canManage && (
           <form action={recordPayment} className="dashboard-form compact-form">
             <input name="cooperativeId" type="hidden" value={cooperativeId} />
@@ -455,7 +518,15 @@ export default async function DashboardPage({
             </label>
             <label>Montant ({cooperative.currency})<input name="amount" min="1" step="1" type="number" required /></label>
             <div className="form-row">
-              <label>Mode de paiement<input name="method" placeholder="Espèces, mobile money…" required /></label>
+              <label>Mode de paiement
+                <select name="method" defaultValue="" required>
+                  <option disabled value="">Sélectionner</option>
+                  <option>Espèces</option>
+                  <option>TMoney (saisie manuelle)</option>
+                  <option>Moov Money (saisie manuelle)</option>
+                  <option>Autre Mobile Money (saisie manuelle)</option>
+                </select>
+              </label>
               <label>Référence / reçu<input name="reference" required /></label>
             </div>
             <button className="button button-primary" disabled={!producers.length} type="submit">Enregistrer le paiement</button>
@@ -470,6 +541,26 @@ export default async function DashboardPage({
             ))}
             {!payments.length && <p className="empty-state">Les paiements enregistrés apparaîtront ici.</p>}
           </div>
+        </div>
+
+        <div className="dashboard-panel">
+          <PanelHeading eyebrow="SMS" title="Notifications de la coopérative" />
+          <p className="panel-note">Les SMS sont envoyés uniquement aux producteurs ayant donné leur consentement explicite. Sans identifiants Termii, ils restent en attente et ne sont pas facturés.</p>
+          <div className="record-list">
+            {smsNotifications.map((notification) => (
+              <div className="record-row" key={notification.id}>
+                <span>
+                  <strong>{smsCategoryLabel(notification.category)} · {notification.toPhone}</strong>
+                  <small>{notification.message} · {notification.createdAt.toLocaleString("fr-FR")}</small>
+                </span>
+                <span className={`record-tag ${notification.status === "SENT" ? "status-open" : ""}`}>
+                  {notification.status === "SENT" ? "Envoyé" : notification.status === "PENDING" ? "En attente" : notification.status === "CANCELLED" ? "Annulé" : "Échec"}
+                </span>
+              </div>
+            ))}
+            {!smsNotifications.length && <p className="empty-state">Aucune notification SMS.</p>}
+          </div>
+          <Link className="text-link" href="/notifications">Voir l’historique et les détails d’envoi ↗</Link>
         </div>
       </section>
       <footer className="dashboard-footer">
@@ -531,6 +622,16 @@ function PanelHeading({ eyebrow, title }: { eyebrow: string; title: string }) {
   return <div className="panel-heading"><span>{eyebrow}</span><h2>{title}</h2></div>;
 }
 
+function smsCategoryLabel(category: string) {
+  const labels: Record<string, string> = {
+    HARVEST: "Récolte",
+    WEATHER: "Météo",
+    PAYMENT: "Paiement",
+    MARKET: "Marché",
+  };
+  return labels[category] ?? "Notification";
+}
+
 function FormNotice({ error, created }: { error?: string; created?: string }) {
   const errors: Record<string, string> = {
     "cooperative-exists": "Votre compte appartient déjà à une coopérative.",
@@ -548,15 +649,26 @@ function FormNotice({ error, created }: { error?: string; created?: string }) {
     "invalid-harvest": "Indiquez une culture, une quantité positive et une date valide.",
     "invalid-crop": "La culture sélectionnée ne fait pas partie de votre coopérative.",
     "invalid-payment": "Vérifiez le montant, le mode et la référence du paiement.",
+    "invalid-sms-phone": "Pour autoriser les SMS, saisissez le numéro au format international, par exemple +228XXXXXXXX.",
+    "invalid-sms-consent": "Le choix de consentement SMS est invalide.",
+    "invalid-traceability": "Vérifiez les informations de traçabilité.",
   };
   const messages: Record<string, string> = {
     cooperative: "Espace coopérative créé.",
     producer: "Producteur ajouté.",
+    "sms-consent": "Consentement SMS enregistré.",
+    "sms-consent-withdrawn": "Consentement SMS retiré; aucun nouveau message ne sera mis en file.",
     farm: "Ferme et culture ajoutées.",
     harvest: "Récolte enregistrée et stock mis à jour.",
+    "harvest-sms-pending": "Récolte tracée. Le SMS reste en attente de la configuration Termii.",
     payment: "Paiement ajouté au registre de suivi.",
+    "payment-sms-pending": "Paiement enregistré. Le SMS reste en attente de la configuration Termii.",
     listing: "Offre publiée sur le marché.",
+    "listing-sms-pending": "Offre publiée. Les SMS consentis restent en attente de la configuration Termii.",
+    "listing-sms-failed": "Offre publiée, mais un ou plusieurs SMS ont échoué. Consultez les notifications pour voir les erreurs et réessayer.",
     "listing-closed": "Offre clôturée.",
+    "listing-closed-sms-pending": "Offre clôturée. Les SMS restent en attente de la configuration Termii.",
+    "listing-closed-sms-failed": "Offre clôturée, mais un ou plusieurs SMS ont échoué. Consultez les notifications pour voir les erreurs et réessayer.",
     price: "Relevé de prix enregistré.",
     transport: "Demande de transport enregistrée.",
     "transport-closed": "Demande de transport terminée.",

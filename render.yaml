@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: agriflow-africa
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm ci && npm run db:deploy && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        generateValue: true

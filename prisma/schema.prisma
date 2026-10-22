@@ -1,0 +1,248 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum CooperativeRole {
+  OWNER
+  MANAGER
+  AGENT
+  PRODUCER
+}
+
+model User {
+  id              String       @id @default(cuid())
+  name            String
+  email           String       @unique
+  emailVerified   Boolean      @default(false)
+  image           String?
+  memberships     Membership[]
+  sentInvitations Invitation[] @relation("InvitationSender")
+  sessions        Session[]
+  accounts        Account[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  expiresAt DateTime
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([identifier])
+}
+
+model Cooperative {
+  id        String     @id @default(cuid())
+  name      String
+  phone     String
+  email     String?
+  address   String?
+  countryCode String
+  currency    String
+  memberships Membership[]
+  invitations Invitation[]
+  producers   Producer[]
+  farms       Farm[]
+  payments    Payment[]
+  marketListings MarketListing[]
+  priceReports PriceReport[]
+  transportRequests TransportRequest[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Membership {
+  id            String          @id @default(cuid())
+  userId        String
+  cooperativeId String
+  role          CooperativeRole @default(PRODUCER)
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cooperative   Cooperative    @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime        @default(now())
+  @@unique([userId, cooperativeId])
+  @@index([cooperativeId])
+}
+
+model Invitation {
+  id            String          @id @default(cuid())
+  email         String
+  role          CooperativeRole
+  tokenHash     String          @unique
+  cooperativeId String
+  invitedById   String
+  expiresAt     DateTime
+  acceptedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  cooperative   Cooperative     @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  invitedBy     User            @relation("InvitationSender", fields: [invitedById], references: [id], onDelete: Cascade)
+  @@index([cooperativeId, email])
+}
+
+model Producer {
+  id            String       @id @default(cuid())
+  firstName     String
+  lastName      String
+  phone         String
+  village       String
+  gender        String
+  photo         String?
+  identityCard  String?
+  cooperativeId String
+  cooperative   Cooperative  @relation(fields: [cooperativeId], references: [id])
+  farms         Farm[]
+  harvests      Harvest[]
+  payments      Payment[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Farm {
+  id            String      @id @default(cuid())
+  name          String
+  gpsLocation   String
+  area          Float
+  producerId    String
+  producer      Producer    @relation(fields: [producerId], references: [id])
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id])
+  crops         Crop[]
+  createdAt     DateTime    @default(now())
+}
+
+model Crop {
+  id              String    @id @default(cuid())
+  name            String
+  sowingDate      DateTime
+  expectedHarvest DateTime
+  status          String
+  estimatedYield  Float
+  farmId          String
+  farm            Farm      @relation(fields: [farmId], references: [id])
+  harvests        Harvest[]
+  createdAt       DateTime  @default(now())
+}
+
+model Harvest {
+  id         String   @id @default(cuid())
+  quantity   Float
+  date       DateTime
+  photos     String[]
+  producerId String
+  producer   Producer @relation(fields: [producerId], references: [id])
+  cropId     String
+  crop       Crop     @relation(fields: [cropId], references: [id])
+  stocks     Stock[]
+  createdAt  DateTime @default(now())
+}
+
+model Stock {
+  id        String   @id @default(cuid())
+  type      String
+  quantity  Float
+  harvestId String
+  harvest   Harvest  @relation(fields: [harvestId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Payment {
+  id            String      @id @default(cuid())
+  amount        Float
+  method        String
+  reference     String
+  status        String      @default("RECORDED")
+  producerId    String
+  producer      Producer    @relation(fields: [producerId], references: [id])
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id])
+  createdAt     DateTime    @default(now())
+}
+
+model Report {
+  id        String   @id @default(cuid())
+  title     String
+  fileUrl   String
+  createdAt DateTime @default(now())
+}
+
+model MarketListing {
+  id            String      @id @default(cuid())
+  title         String
+  crop          String
+  quantity      Float
+  unit          String      @default("kg")
+  pricePerUnit  Float?
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  @@index([active, createdAt])
+  @@index([cooperativeId, active])
+}
+
+model PriceReport {
+  id            String      @id @default(cuid())
+  crop          String
+  marketName    String
+  price         Float
+  unit          String      @default("kg")
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  observedAt    DateTime    @default(now())
+  createdAt     DateTime    @default(now())
+  @@index([crop, observedAt])
+  @@index([cooperativeId, observedAt])
+}
+
+model TransportRequest {
+  id            String      @id @default(cuid())
+  cargo         String
+  quantity      Float
+  unit          String      @default("kg")
+  origin        String
+  destination   String
+  pickupDate    DateTime
+  status        String      @default("OPEN")
+  cooperativeId String
+  cooperative   Cooperative @relation(fields: [cooperativeId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  @@index([cooperativeId, status, pickupDate])
+}

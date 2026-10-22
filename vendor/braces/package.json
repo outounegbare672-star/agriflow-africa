@@ -1,0 +1,13 @@
+{
+  "name": "braces",
+  "version": "3.0.4",
+  "description": "Locally patched braces dependency with bounded parser nesting",
+  "license": "MIT",
+  "main": "index.js",
+  "engines": {
+    "node": ">=8"
+  },
+  "dependencies": {
+    "fill-range": "^7.1.1"
+  }
+}

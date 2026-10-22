@@ -9,6 +9,15 @@ services:
     healthCheckPath: /
     envVars:
       - key: DATABASE_URL
-        sync: false
+        fromDatabase:
+          name: agriflow-africa-db
+          property: connectionString
       - key: BETTER_AUTH_SECRET
         generateValue: true
+
+databases:
+  - name: agriflow-africa-db
+    databaseName: agriflow_africa
+    user: agriflow_africa
+    plan: free
+    region: frankfurt

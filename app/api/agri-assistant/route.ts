@@ -113,10 +113,18 @@ export async function POST(request: Request) {
     );
   }
   if (!providerResponse.ok) {
+    console.error(`[ECO-FARMS IA] Gemini returned HTTP ${providerResponse.status}.`);
+    const error = providerResponse.status === 401 || providerResponse.status === 403
+      ? "Google Gemini refuse la clé ou son accès. Vérifiez que la clé est active et autorisée pour Gemini."
+      : providerResponse.status === 404
+        ? "Le modèle Gemini configuré est introuvable ou indisponible pour cette clé."
+        : providerResponse.status === 429
+          ? "Le quota ou le débit autorisé par Google Gemini est atteint. Vérifiez les limites du compte Google AI."
+          : providerResponse.status === 400
+            ? "Google Gemini refuse le format de la demande. Réessayez avec une question plus simple."
+            : "Google Gemini n’a pas pu traiter la demande. Vérifiez les journaux Render pour le code HTTP.";
     return NextResponse.json(
-      { error: providerResponse.status === 429
-        ? "Le service IA est temporairement très sollicité. Réessayez plus tard."
-        : "Le service IA n’a pas pu traiter la question. Vérifiez la clé Gemini puis réessayez." },
+      { error, providerStatus: providerResponse.status },
       { status: 502 },
     );
   }

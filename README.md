@@ -47,8 +47,8 @@ espace » pour créer un compte et enregistrer une coopérative.
   transmis ; les noms, coordonnées GPS et numéros de téléphone ne le sont pas.
 - Assistant de questions agricoles ECO-FARMS IA facultatif, propulsé par
   Gemini. Les questions et les six derniers messages de la conversation sont
-  envoyés au fournisseur ; cinq demandes IA par jour et par compte, partagées
-  avec les recommandations de culture.
+  envoyés au fournisseur ; aucune limite quotidienne n'est appliquée par la
+  plateforme au chat (Google peut appliquer ses propres quotas).
 - Parcours Mobile Money CinetPay limité au sandbox : aucun paiement réel, aucune
   vente confirmée et aucun reversement n'est pris en charge.
 - Demandes de transport internes à la coopérative avec statut ouvert/terminé.
@@ -91,6 +91,16 @@ Les clés doivent être enregistrées dans les variables secrètes Render (ou da
 - `GEMINI_API_KEY` active l’assistant de questions agricoles. L'usage de l'API
   peut être facturé par Google. Le secret reste côté serveur ; les questions
   envoyées à l’assistant sont traitées par Google Gemini.
+- `GEMINI_MODEL` choisit le modèle Gemini (par défaut `gemini-3.8-flash`).
+  Après toute modification des secrets Render, redéployez le service et utilisez
+  **Vérifier la connexion IA** dans **Conseils & alertes**. Ce test vérifie
+  l'accès au modèle sans générer de texte ni consommer le quota de génération.
+  Depuis le 28 mai 2026, Google AI Studio crée des clés d'autorisation par
+  défaut ; les anciennes clés standard doivent être explicitement restreintes
+  à l'API Gemini. Créez ou vérifiez la clé dans
+  [Google AI Studio](https://aistudio.google.com/apikey), puis enregistrez-la
+  uniquement comme secret Render `GEMINI_API_KEY`. Ne collez jamais cette clé
+  dans le code, les conversations ou les journaux.
 - `TERMII_API_KEY`, `TERMII_SENDER_ID` et éventuellement `TERMII_BASE_URL`
   activent les SMS. Le compte doit autoriser l'expéditeur et disposer de crédit.
   Seuls les producteurs ayant consenti reçoivent des messages ; les erreurs

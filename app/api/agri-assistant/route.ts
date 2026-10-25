@@ -1,6 +1,7 @@
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getAuth } from "@/lib/auth";
+import { geminiModel, getGeminiProviderMessage, geminiProviderError, isValidGeminiModel } from "@/lib/gemini";
 import { getPrisma } from "@/lib/prisma";
 
 const maximumMessageLength = 1_000;
@@ -37,11 +38,15 @@ export async function POST(request: Request) {
   const session = await getAuth().api.getSession({ headers: await headers() });
   if (!session) return NextResponse.json({ error: "Connectez-vous pour parler à ECO-FARMS IA." }, { status: 401 });
 
-  if (!process.env.GEMINI_API_KEY) {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
     return NextResponse.json(
       { error: "ECO-FARMS IA n’est pas encore activé. Configurez GEMINI_API_KEY dans les secrets Render." },
       { status: 503 },
     );
+  }
+  if (!isValidGeminiModel(geminiModel)) {
+    return NextResponse.json({ error: "La variable GEMINI_MODEL contient un identifiant invalide." }, { status: 500 });
   }
 
   let body: unknown;
@@ -82,7 +87,7 @@ export async function POST(request: Request) {
     { role: "user", parts: [{ text: body.message.trim() }] },
   ];
 
-  const providerUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+  const providerUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(geminiModel)}:generateContent`;
   const providerRequestBody = JSON.stringify({
     systemInstruction: {
       parts: [{
@@ -100,7 +105,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: {
           "content-type": "application/json",
-          "x-goog-api-key": process.env.GEMINI_API_KEY,
+          "x-goog-api-key": apiKey,
         },
         body: providerRequestBody,
         signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
@@ -113,28 +118,23 @@ export async function POST(request: Request) {
         { status: timedOut ? 504 : 502 },
       );
     }
-    if (providerResponse.status !== 503 || attempt === 1) break;
-    console.warn("[ECO-FARMS IA] Gemini returned HTTP 503; retrying once.");
+    if (![500, 502, 503, 504].includes(providerResponse.status) || attempt === 1) break;
+    console.warn(`[ECO-FARMS IA] Gemini returned HTTP ${providerResponse.status}; retrying once.`);
     await new Promise((resolve) => setTimeout(resolve, 1_000));
   }
   if (!providerResponse) {
     return NextResponse.json({ error: "Google Gemini n’a pas retourné de réponse." }, { status: 502 });
   }
   if (!providerResponse.ok) {
-    console.error(`[ECO-FARMS IA] Gemini returned HTTP ${providerResponse.status}.`);
-    const error = providerResponse.status === 401 || providerResponse.status === 403
-      ? "Google Gemini refuse la clé ou son accès. Vérifiez que la clé est active et autorisée pour Gemini."
-      : providerResponse.status === 404
-        ? "Le modèle Gemini configuré est introuvable ou indisponible pour cette clé."
-        : providerResponse.status === 429
-          ? "Le quota ou le débit autorisé par Google Gemini est atteint. Vérifiez les limites du compte Google AI."
-          : providerResponse.status === 503
-            ? "Google Gemini est temporairement indisponible, même après une nouvelle tentative. Réessayez dans quelques instants."
-          : providerResponse.status === 400
-            ? "Google Gemini refuse le format de la demande. Réessayez avec une question plus simple."
-            : "Google Gemini n’a pas pu traiter la demande. Vérifiez les journaux Render pour le code HTTP.";
+    const providerMessage = await getGeminiProviderMessage(providerResponse, apiKey);
+    console.error(`[ECO-FARMS IA] Gemini returned HTTP ${providerResponse.status}.${providerMessage ? ` ${providerMessage}` : ""}`);
     return NextResponse.json(
-      { error, providerStatus: providerResponse.status },
+      {
+        error: geminiProviderError(providerResponse.status),
+        providerStatus: providerResponse.status,
+        providerMessage,
+        model: geminiModel,
+      },
       { status: providerResponse.status === 429 ? 429 : providerResponse.status === 503 ? 503 : 502 },
     );
   }

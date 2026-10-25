@@ -467,6 +467,8 @@ a {
 }
 
 .market-item-image {
+  width: 52px;
+  height: 52px;
   flex: 0 0 auto;
   border-radius: 4px;
   object-fit: cover;

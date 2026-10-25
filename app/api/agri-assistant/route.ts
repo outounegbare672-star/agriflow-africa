@@ -82,35 +82,43 @@ export async function POST(request: Request) {
     { role: "user", parts: [{ text: body.message.trim() }] },
   ];
 
-  let providerResponse: Response;
-  try {
-    providerResponse = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
-      {
+  const providerUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const providerRequestBody = JSON.stringify({
+    systemInstruction: {
+      parts: [{
+        text: "Tu es ECO-FARMS IA, un assistant d’information agricole pour les agriculteurs du Togo. Réponds en français simple, avec des conseils pratiques et concis. N’invente pas de météo, de prix ou de règles locales. Ne diagnostique pas les maladies et ne prescris jamais de pesticide, de produit chimique ni de dosage. Signale les incertitudes et conseille de consulter un agent agricole local pour les décisions importantes. Tes réponses sont informatives et ne remplacent pas un professionnel.",
+      }],
+    },
+    contents,
+    generationConfig: { temperature: 0.4, maxOutputTokens: 500 },
+  });
+  const deadline = Date.now() + providerTimeoutMs;
+  let providerResponse: Response | undefined;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      providerResponse = await fetch(providerUrl, {
         method: "POST",
         headers: {
           "content-type": "application/json",
           "x-goog-api-key": process.env.GEMINI_API_KEY,
         },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{
-              text: "Tu es ECO-FARMS IA, un assistant d’information agricole pour les agriculteurs du Togo. Réponds en français simple, avec des conseils pratiques et concis. N’invente pas de météo, de prix ou de règles locales. Ne diagnostique pas les maladies et ne prescris jamais de pesticide, de produit chimique ni de dosage. Signale les incertitudes et conseille de consulter un agent agricole local pour les décisions importantes. Tes réponses sont informatives et ne remplacent pas un professionnel.",
-            }],
-          },
-          contents,
-          generationConfig: { temperature: 0.4, maxOutputTokens: 500 },
-        }),
-        signal: AbortSignal.timeout(providerTimeoutMs),
+        body: providerRequestBody,
+        signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())),
         cache: "no-store",
-      },
-    );
-  } catch (error) {
-    const timedOut = error instanceof Error && error.name === "TimeoutError";
-    return NextResponse.json(
-      { error: timedOut ? "ECO-FARMS IA met trop de temps à répondre. Réessayez." : "ECO-FARMS IA est momentanément injoignable." },
-      { status: timedOut ? 504 : 502 },
-    );
+      });
+    } catch (error) {
+      const timedOut = error instanceof Error && error.name === "TimeoutError";
+      return NextResponse.json(
+        { error: timedOut ? "ECO-FARMS IA met trop de temps à répondre. Réessayez." : "ECO-FARMS IA est momentanément injoignable." },
+        { status: timedOut ? 504 : 502 },
+      );
+    }
+    if (providerResponse.status !== 503 || attempt === 1) break;
+    console.warn("[ECO-FARMS IA] Gemini returned HTTP 503; retrying once.");
+    await new Promise((resolve) => setTimeout(resolve, 1_000));
+  }
+  if (!providerResponse) {
+    return NextResponse.json({ error: "Google Gemini n’a pas retourné de réponse." }, { status: 502 });
   }
   if (!providerResponse.ok) {
     console.error(`[ECO-FARMS IA] Gemini returned HTTP ${providerResponse.status}.`);
@@ -120,12 +128,14 @@ export async function POST(request: Request) {
         ? "Le modèle Gemini configuré est introuvable ou indisponible pour cette clé."
         : providerResponse.status === 429
           ? "Le quota ou le débit autorisé par Google Gemini est atteint. Vérifiez les limites du compte Google AI."
+          : providerResponse.status === 503
+            ? "Google Gemini est temporairement indisponible, même après une nouvelle tentative. Réessayez dans quelques instants."
           : providerResponse.status === 400
             ? "Google Gemini refuse le format de la demande. Réessayez avec une question plus simple."
             : "Google Gemini n’a pas pu traiter la demande. Vérifiez les journaux Render pour le code HTTP.";
     return NextResponse.json(
       { error, providerStatus: providerResponse.status },
-      { status: 502 },
+      { status: providerResponse.status === 429 ? 429 : providerResponse.status === 503 ? 503 : 502 },
     );
   }
 

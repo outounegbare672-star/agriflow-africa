@@ -7,6 +7,7 @@ import { getAuth } from "@/lib/auth";
 import { getPrisma } from "@/lib/prisma";
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 import { RecommendationsPanel } from "./recommendations";
+import { AgriculturalAssistant } from "./assistant";
 import { queueUpcomingHarvestReminders } from "./actions";
 
 export const metadata: Metadata = {
@@ -122,6 +123,7 @@ export default async function AdvicePage({
         cooperativeId={cooperativeId}
         crops={crops.map(({ id, name }) => ({ id, name }))}
       />
+      <AgriculturalAssistant />
       {crops.length > 0 && (
         <section className="module-form-panel">
           <h2>Rappels SMS de récolte</h2>

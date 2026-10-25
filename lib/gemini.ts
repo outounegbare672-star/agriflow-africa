@@ -1,4 +1,4 @@
-export const geminiModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
+export const geminiModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.5-flash-lite";
 
 export function isValidGeminiModel(model: string) {
   return /^[a-z0-9][a-z0-9.-]{0,99}$/i.test(model);

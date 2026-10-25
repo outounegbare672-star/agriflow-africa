@@ -91,7 +91,8 @@ Les clés doivent être enregistrées dans les variables secrètes Render (ou da
 - `GEMINI_API_KEY` active l’assistant de questions agricoles. L'usage de l'API
   peut être facturé par Google. Le secret reste côté serveur ; les questions
   envoyées à l’assistant sont traitées par Google Gemini.
-- `GEMINI_MODEL` choisit le modèle Gemini (par défaut `gemini-3.8-flash`).
+- `GEMINI_MODEL` choisit le modèle Gemini (par défaut `gemini-3.5-flash-lite`,
+  optimisé pour une faible latence et un coût réduit).
   Après toute modification des secrets Render, redéployez le service et utilisez
   **Vérifier la connexion IA** dans **Conseils & alertes**. Ce test vérifie
   l'accès au modèle sans générer de texte ni consommer le quota de génération.

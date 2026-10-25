@@ -6,8 +6,8 @@ import { getWestAfricanCountry } from "@/lib/west-africa";
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 
 export const metadata: Metadata = {
-  title: "Traçabilité d’un lot — Agriflow Africa",
-  description: "Consultez les étapes déclarées de traçabilité d’une récolte Agriflow.",
+  title: "Traçabilité d’un lot — ECO-FARMS Togo",
+  description: "Consultez les étapes déclarées de traçabilité d’une récolte ECO-FARMS Togo.",
 };
 export const instant = false;
 
@@ -52,7 +52,7 @@ export default async function TraceabilityPage({
       <section className="module-hero">
         <p className="eyebrow eyebrow-dark"><span /> TRAÇABILITÉ AGRICOLE</p>
         <h1>Suivi du lot {harvest.batchCode}.</h1>
-        <p>Historique des étapes déclarées par la coopérative. Agriflow ne vérifie pas physiquement les informations saisies.</p>
+        <p>Historique des étapes déclarées par la coopérative. ECO-FARMS Togo ne vérifie pas physiquement les informations saisies.</p>
       </section>
       {query.created === "event" && <p className="form-success" role="status">Étape de traçabilité ajoutée.</p>}
       <section className="traceability-summary">
@@ -73,7 +73,7 @@ export default async function TraceabilityPage({
           </article>
         ))}
       </section>
-      <p className="module-disclaimer">Ce code identifie le lot dans Agriflow. Les lieux précis, noms de producteurs et coordonnées GPS ne sont pas publiés sur cette page.</p>
+      <p className="module-disclaimer">Ce code identifie le lot dans ECO-FARMS Togo. Les lieux précis, noms de producteurs et coordonnées GPS ne sont pas publiés sur cette page.</p>
     </main>
   );
 }

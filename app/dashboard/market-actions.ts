@@ -67,7 +67,7 @@ export async function createMarketListing(data: FormData) {
   const sms = await queueCooperativeSms(
     cooperativeId,
     "MARKET",
-    `Agriflow : nouvelle offre ${crop} publiée par votre coopérative. Consultez le marché.`,
+    `ECO-FARMS Togo : nouvelle offre ${crop} publiée par votre coopérative. Consultez le marché.`,
     undefined,
     `listing:${listing.id}:published`,
   );
@@ -95,7 +95,7 @@ export async function closeMarketListing(data: FormData) {
   const sms = await queueCooperativeSms(
     cooperativeId,
     "MARKET",
-    `Agriflow : l’offre ${listing.title} (${listing.crop}) a été clôturée.`,
+    `ECO-FARMS Togo : l’offre ${listing.title} (${listing.crop}) a été clôturée.`,
     undefined,
     `listing:${listing.id}:closed`,
   );

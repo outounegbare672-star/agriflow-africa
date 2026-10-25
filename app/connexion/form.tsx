@@ -74,7 +74,7 @@ export function AuthForm({ nextPath }: { nextPath: string }) {
         }}
         type="button"
       >
-        {mode === "signup" ? "Déjà inscrit·e ? Se connecter" : "Nouveau sur Agriflow ? Créer un compte"}
+        {mode === "signup" ? "Déjà inscrit·e ? Se connecter" : "Nouveau sur ECO-FARMS Togo ? Créer un compte"}
       </button>
     </form>
   );

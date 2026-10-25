@@ -9,7 +9,7 @@ import { getWestAfricanCountry } from "@/lib/west-africa";
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 
 export const metadata: Metadata = {
-  title: "Statistiques agricoles régionales — Agriflow Africa",
+  title: "Statistiques agricoles régionales — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;

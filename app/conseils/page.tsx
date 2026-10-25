@@ -10,7 +10,7 @@ import { RecommendationsPanel } from "./recommendations";
 import { queueUpcomingHarvestReminders } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Calendrier et alertes agricoles — Agriflow Africa",
+  title: "Calendrier et alertes agricoles — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;
@@ -132,7 +132,7 @@ export default async function AdvicePage({
           </form>
         </section>
       )}
-      <p className="module-disclaimer">Les rappels utilisent les informations saisies dans Agriflow. Les recommandations générées automatiquement sont indicatives, ne diagnostiquent pas les maladies et ne remplacent pas l’accompagnement d’un conseiller agricole.</p>
+      <p className="module-disclaimer">Les rappels utilisent les informations saisies dans ECO-FARMS Togo. Les recommandations générées automatiquement sont indicatives, ne diagnostiquent pas les maladies et ne remplacent pas l’accompagnement d’un conseiller agricole.</p>
     </main>
   );
 }

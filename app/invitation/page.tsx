@@ -3,7 +3,7 @@ import Link from "next/link";
 import { acceptInvitation } from "@/app/dashboard/invitation-actions";
 
 export const metadata: Metadata = {
-  title: "Invitation — Agriflow Africa",
+  title: "Invitation — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;
@@ -24,9 +24,9 @@ export default async function InvitationPage({
     <main className="auth-page">
       <Link className="auth-back" href="/">← Retour au site</Link>
       <section className="auth-card">
-        <p className="eyebrow eyebrow-dark"><span /> INVITATION AGRIFLOW</p>
+        <p className="eyebrow eyebrow-dark"><span /> INVITATION ECO-FARMS TOGO</p>
         <h1>Rejoindre une coopérative.</h1>
-        <p className="auth-intro">Connectez-vous à votre compte Agriflow, puis acceptez l’invitation.</p>
+        <p className="auth-intro">Connectez-vous à votre compte ECO-FARMS Togo, puis acceptez l’invitation.</p>
         {errorMessage && <p className="form-error" role="alert">{errorMessage}</p>}
         {!process.env.DATABASE_URL ? (
           <p className="form-error" role="status">L’acceptation d’invitation sera disponible après la configuration de PostgreSQL.</p>

@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   const result = await queueCooperativeSms(
     body.cooperativeId,
     "WEATHER",
-    `Agriflow - Alerte météo pour une parcelle suivie: ${riskSummary}. Protégez les récoltes et vérifiez localement.`,
+    `ECO-FARMS Togo - Alerte météo pour une parcelle suivie: ${riskSummary}. Protégez les récoltes et vérifiez localement.`,
   );
   return NextResponse.json({
     queued: result.queued,

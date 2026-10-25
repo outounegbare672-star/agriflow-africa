@@ -1,22 +1,33 @@
+import Image from "next/image";
 import Link from "next/link";
 
 const marketProducts = [
   {
-    emoji: "🌾",
     name: "Céréales",
     detail: "Mil · maïs · riz",
+    image: "/images/cereals.jpg",
+    imageAlt: "Gros plan sur des grains de céréales",
     color: "gold",
   },
   {
-    emoji: "🍅",
-    name: "Fruits & légumes",
-    detail: "Du frais, tout près",
+    name: "Fruits",
+    detail: "Des récoltes fraîches",
+    image: "/images/fruits.jpg",
+    imageAlt: "Panier de fruits frais",
     color: "tomato",
   },
   {
-    emoji: "🥜",
-    name: "Cultures locales",
-    detail: "Cacao · karité · arachide",
+    name: "Légumes",
+    detail: "Du frais, tout près",
+    image: "/images/fruits-vegetables.jpg",
+    imageAlt: "Assortiment de légumes frais",
+    color: "tomato",
+  },
+  {
+    name: "Cultures vivrières",
+    detail: "Racines · légumes",
+    image: "/images/local-crops.jpg",
+    imageAlt: "Récolte de carottes",
     color: "cocoa",
   },
 ];
@@ -44,7 +55,7 @@ const features = [
 
 function BrandMark() {
   return (
-    <Link className="brand" href="/" aria-label="Agriflow Africa, accueil">
+    <Link className="brand" href="/" aria-label="ECO-FARMS Togo, accueil">
       <span className="brand-mark" aria-hidden="true">
         <svg viewBox="0 0 36 36" fill="none">
           <path
@@ -56,8 +67,8 @@ function BrandMark() {
         </svg>
       </span>
       <span className="brand-name">
-        agri<span>flow</span>
-        <small>AFRICA</small>
+        ECO-<span>FARMS</span>
+        <small>TOGO</small>
       </span>
     </Link>
   );
@@ -130,25 +141,17 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="market-art" aria-label="Illustration de produits agricoles locaux">
-            <div className="art-sun" />
+          <div className="market-art">
+            <Image
+              className="market-photo"
+              src="/images/harvest-field.jpg"
+              alt="Champ de céréales au coucher du soleil"
+              fill
+              priority
+              sizes="(max-width: 580px) 100vw, (max-width: 820px) 42vw, 540px"
+            />
+            <div className="market-photo-overlay" aria-hidden="true" />
             <div className="art-stamp"><span>DE NOS TERRES</span><b>✳</b><span>AVEC FIERTÉ</span></div>
-            <div className="art-leaf leaf-one">✳</div>
-            <div className="art-leaf leaf-two">✳</div>
-            <div className="art-orbit orbit-one" />
-            <div className="art-orbit orbit-two" />
-            <div className="produce produce-rice" aria-hidden="true">🌾</div>
-            <div className="produce produce-tomato" aria-hidden="true">🍅</div>
-            <div className="produce produce-corn" aria-hidden="true">🌽</div>
-            <div className="produce produce-cocoa" aria-hidden="true">🥜</div>
-            <div className="produce produce-plantain" aria-hidden="true">🍌</div>
-            <div className="market-basket">
-              <div className="basket-rim" />
-              <div className="basket-body">
-                <span className="basket-stripe" />
-                <span className="basket-label">RÉCOLTES<br />D’ICI</span>
-              </div>
-            </div>
             <div className="art-caption">
               <span className="caption-icon">✳</span>
               <span><strong>Nos récoltes.</strong><br />Notre fierté.</span>
@@ -170,7 +173,14 @@ export default function Home() {
         </div>
         {marketProducts.map((product) => (
           <a className={`market-item ${product.color}`} href={`/marche?culture=${encodeURIComponent(product.name)}`} key={product.name}>
-            <span className="market-emoji" aria-hidden="true">{product.emoji}</span>
+            <Image
+              className="market-item-image"
+              src={product.image}
+              alt={product.imageAlt}
+              width={52}
+              height={52}
+              sizes="52px"
+            />
             <span className="market-item-copy">
               <strong>{product.name}</strong>
               <small>{product.detail}</small>
@@ -211,14 +221,14 @@ export default function Home() {
           <h2>Et si on faisait<br />grandir <em>la suite ?</em></h2>
         </div>
         <a className="button button-light" href="/connexion?next=%2Fdashboard">
-          Rejoindre Agriflow <ArrowIcon />
+          Rejoindre ECO-FARMS Togo <ArrowIcon />
         </a>
       </section>
 
       <footer className="site-footer">
         <BrandMark />
         <p>Les racines sont ici. Les possibles, partout.</p>
-        <span>© AGRIFLOW AFRICA</span>
+        <span>© ECO-FARMS TOGO</span>
       </footer>
     </main>
   );

@@ -44,7 +44,7 @@ export async function queueUpcomingHarvestReminders(data: FormData) {
     const result = await queueCooperativeSms(
       cooperativeId,
       "HARVEST",
-      `Agriflow : rappel, la récolte de ${crop.name} est prévue le ${date}. Confirmez l’organisation avec la coopérative.`,
+      `ECO-FARMS Togo : rappel, la récolte de ${crop.name} est prévue le ${date}. Confirmez l’organisation avec la coopérative.`,
       [crop.farm.producer.id],
       `harvest-reminder:${crop.id}:${date}`,
     );

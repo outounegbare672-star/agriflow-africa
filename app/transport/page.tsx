@@ -9,7 +9,7 @@ import { completeTransportRequest, createTransportRequest } from "@/app/dashboar
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 
 export const metadata: Metadata = {
-  title: "Transport des récoltes — Agriflow Africa",
+  title: "Transport des récoltes — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;

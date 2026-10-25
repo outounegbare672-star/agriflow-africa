@@ -9,7 +9,7 @@ import { getPrisma } from "@/lib/prisma";
 import { ModuleHeader } from "@/app/marche/page";
 
 export const metadata: Metadata = {
-  title: "Résultat du paiement test — Agriflow Africa",
+  title: "Résultat du paiement test — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;

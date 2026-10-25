@@ -9,7 +9,7 @@ import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 import { WeatherPanel } from "./weather-panel";
 
 export const metadata: Metadata = {
-  title: "Météo agricole — Agriflow Africa",
+  title: "Météo agricole — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;

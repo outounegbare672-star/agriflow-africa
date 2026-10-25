@@ -136,7 +136,7 @@ export async function refreshCinetPayCheckout(transactionId: string): Promise<Ch
   if (payload.data.transaction_id !== transactionId ||
     (payload.data.site_id !== undefined &&
       String(payload.data.site_id) !== process.env.CINETPAY_SANDBOX_SITE_ID)) {
-    throw new Error("La transaction vérifiée ne correspond pas au compte sandbox Agriflow.");
+    throw new Error("La transaction vérifiée ne correspond pas au compte sandbox ECO-FARMS Togo.");
   }
 
   const status: CheckoutStatus = payload.data.status === "ACCEPTED"

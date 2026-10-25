@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/prisma";
 import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 
 export const metadata: Metadata = {
-  title: "Prix agricoles déclarés — Agriflow Africa",
+  title: "Prix agricoles déclarés — ECO-FARMS Togo",
   description: "Prix agricoles récemment relevés et déclarés par les coopératives participantes.",
 };
 export const instant = false;
@@ -55,7 +55,7 @@ export default async function PricesPage() {
       ) : (
         <ModuleNotice title="Aucun relevé de prix pour le moment" text="Une coopérative peut publier un relevé depuis son espace de gestion." />
       )}
-      <p className="module-disclaimer">Les prix sont déclaratifs, indicatifs et non vérifiés par Agriflow. Vérifiez toujours la date et les conditions auprès de la coopérative.</p>
+      <p className="module-disclaimer">Les prix sont déclaratifs, indicatifs et non vérifiés par ECO-FARMS Togo. Vérifiez toujours la date et les conditions auprès de la coopérative.</p>
     </main>
   );
 }

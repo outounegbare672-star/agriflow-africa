@@ -18,7 +18,7 @@ function createAuth() {
   }
 
   return betterAuth({
-    appName: "Agriflow Africa",
+    appName: "ECO-FARMS Togo",
     baseURL: baseURL ?? "http://localhost:3000",
     ...(secret ? { secret } : {}),
     database: prismaAdapter(getPrisma(), { provider: "postgresql" }),

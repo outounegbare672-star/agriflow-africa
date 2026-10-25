@@ -73,7 +73,7 @@ export async function createSandboxCheckout(data: FormData) {
       transactionId,
       amount,
       currency: listing.cooperative.currency,
-      description: `Test Agriflow - ${listing.title}`,
+      description: `Test ECO-FARMS Togo - ${listing.title}`,
       buyerId: session.user.id,
       buyerName: session.user.name,
       buyerEmail: session.user.email,

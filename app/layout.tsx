@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Agriflow Africa — Du champ au marché",
+  title: "ECO-FARMS TOGO",
   description:
-    "La plateforme qui rapproche producteurs, coopératives et acheteurs, pensée pour les réalités agricoles africaines.",
+    "La plateforme qui rapproche producteurs, coopératives et acheteurs, pensée pour les réalités agricoles du Togo.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

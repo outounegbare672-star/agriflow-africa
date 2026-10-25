@@ -6,7 +6,7 @@ import { westAfricanCountries } from "@/lib/west-africa";
 import { createSandboxCheckout } from "./checkout-actions";
 
 export const metadata: Metadata = {
-  title: "Marché agricole — Agriflow Africa",
+  title: "Marché agricole — ECO-FARMS Togo",
   description: "Offres de produits agricoles publiées par les coopératives d'Afrique de l'Ouest.",
 };
 export const instant = false;
@@ -119,7 +119,7 @@ export default async function MarketPage({
           text="Les offres apparaîtront ici lorsqu’une coopérative en publiera une depuis son espace."
         />
       )}
-      <p className="module-disclaimer">Agriflow met en relation les parties ; les quantités, prix et conditions sont publiés par les coopératives et doivent être confirmés directement.</p>
+      <p className="module-disclaimer">ECO-FARMS Togo met en relation les parties ; les quantités, prix et conditions sont publiés par les coopératives et doivent être confirmés directement.</p>
     </main>
   );
 }
@@ -139,10 +139,10 @@ export function ModuleHeader() {
   return (
     <header className="module-header">
       <Link className="brand" href="/">
-        <span className="brand-mark" aria-hidden="true">A</span>
-        <span className="brand-name">agri<span>flow</span><small>AFRICA</small></span>
+        <span className="brand-mark" aria-hidden="true">E</span>
+        <span className="brand-name">ECO-<span>FARMS</span><small>TOGO</small></span>
       </Link>
-      <nav aria-label="Navigation Agriflow">
+      <nav aria-label="Navigation ECO-FARMS Togo">
         <Link href="/marche">Marché</Link>
         <Link href="/prix">Prix relevés</Link>
         <Link href="/transport">Transport</Link>

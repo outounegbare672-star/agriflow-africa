@@ -25,7 +25,7 @@ import {
 import { addTraceabilityEvent } from "@/app/tracabilite/actions";
 
 export const metadata: Metadata = {
-  title: "Espace de gestion — Agriflow Africa",
+  title: "Espace de gestion — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;
@@ -240,7 +240,7 @@ export default async function DashboardPage({
 
       <FormNotice error={params.error} created={params.created} />
 
-      <nav className="dashboard-shortcuts" aria-label="Outils Agriflow">
+      <nav className="dashboard-shortcuts" aria-label="Outils ECO-FARMS Togo">
         <Link href="/marche">Marché public ↗</Link>
         <Link href="/prix">Prix relevés ↗</Link>
         <Link href={`/transport?cooperative=${encodeURIComponent(cooperativeId)}`}>Transport ↗</Link>
@@ -584,9 +584,9 @@ function DashboardHeader({
 }) {
   return (
     <header className="dashboard-header">
-      <Link className="brand" href="/" aria-label="Agriflow Africa, accueil">
-        <span className="brand-mark" aria-hidden="true">A</span>
-        <span className="brand-name">agri<span>flow</span><small>AFRICA</small></span>
+      <Link className="brand" href="/" aria-label="ECO-FARMS Togo, accueil">
+        <span className="brand-mark" aria-hidden="true">E</span>
+        <span className="brand-name">ECO-<span>FARMS</span><small>TOGO</small></span>
       </Link>
       {memberships.length > 0 && (
         <details className="cooperative-switcher">

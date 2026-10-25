@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: agriflow-africa
+    name: eco-farms-togo
     runtime: node
     plan: free
     region: frankfurt

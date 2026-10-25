@@ -3,8 +3,8 @@ import Link from "next/link";
 import { AuthForm } from "./form";
 
 export const metadata: Metadata = {
-  title: "Connexion — Agriflow Africa",
-  description: "Connectez-vous à votre espace de gestion Agriflow Africa.",
+  title: "Connexion — ECO-FARMS Togo",
+  description: "Connectez-vous à votre espace de gestion ECO-FARMS Togo.",
 };
 export const instant = false;
 
@@ -22,7 +22,7 @@ export default async function LoginPage({
     <main className="auth-page">
       <Link className="auth-back" href="/">← Retour au site</Link>
       <section className="auth-card">
-        <p className="eyebrow eyebrow-dark"><span /> ESPACE AGRIFLOW</p>
+        <p className="eyebrow eyebrow-dark"><span /> ESPACE ECO-FARMS TOGO</p>
         <h1>Gérez votre activité.</h1>
         <p className="auth-intro">Créez un compte ou retrouvez votre espace coopérative.</p>
         {process.env.DATABASE_URL ? (

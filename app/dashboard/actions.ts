@@ -223,7 +223,7 @@ export async function recordHarvest(data: FormData) {
   const sms = await queueCooperativeSms(
     cooperativeId,
     "HARVEST",
-    `Agriflow : récolte de ${crop.name} enregistrée (${quantity} kg). Lot ${harvest.batchCode}.`,
+    `ECO-FARMS Togo : récolte de ${crop.name} enregistrée (${quantity} kg). Lot ${harvest.batchCode}.`,
     [crop.farm.producerId],
     `harvest:${harvest.id}`,
   );
@@ -261,7 +261,7 @@ export async function recordPayment(data: FormData) {
   const sms = await queueCooperativeSms(
     cooperativeId,
     "PAYMENT",
-    `Agriflow : un paiement de ${amount} ${cooperative.currency} a été enregistré pour vous. Réf. ${reference}.`,
+    `ECO-FARMS Togo : un paiement de ${amount} ${cooperative.currency} a été enregistré pour vous. Réf. ${reference}.`,
     [producer.id],
     `payment:${payment.id}`,
   );

@@ -9,7 +9,7 @@ import { ModuleHeader, ModuleNotice } from "@/app/marche/page";
 import { retrySmsNotification } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Notifications SMS — Agriflow Africa",
+  title: "Notifications SMS — ECO-FARMS Togo",
   robots: { index: false, follow: false },
 };
 export const instant = false;

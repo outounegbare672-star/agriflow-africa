@@ -1,6 +1,6 @@
-# Agriflow Africa
+# ECO-FARMS Togo
 
-Agriflow est un SaaS agricole multi-tenant destiné aux coopératives d'Afrique
+ECO-FARMS Togo est un SaaS agricole multi-tenant destiné aux coopératives d'Afrique
 de l'Ouest. Le Togo est le premier pays de lancement ; chaque espace
 coopérative sélectionne son pays et reçoit sa devise locale.
 

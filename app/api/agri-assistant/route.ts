@@ -5,6 +5,7 @@ import { getPrisma } from "@/lib/prisma";
 
 const maximumMessageLength = 1_000;
 const maximumHistoryLength = 6;
+const providerTimeoutMs = 60_000;
 
 type ConversationMessage = {
   role: "user" | "assistant";
@@ -112,7 +113,7 @@ export async function POST(request: Request) {
           contents,
           generationConfig: { temperature: 0.4, maxOutputTokens: 500 },
         }),
-        signal: AbortSignal.timeout(25_000),
+        signal: AbortSignal.timeout(providerTimeoutMs),
         cache: "no-store",
       },
     );

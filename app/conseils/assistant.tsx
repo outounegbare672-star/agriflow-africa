@@ -60,7 +60,7 @@ export function AgriculturalAssistant() {
     <section className="module-form-panel assistant-panel" aria-labelledby="agricultural-assistant-title">
       <p className="eyebrow eyebrow-dark"><span /> ECO-FARMS IA</p>
       <h2 id="agricultural-assistant-title">Posez votre question agricole</h2>
-      <p className="panel-note">Un assistant en français simple pour vos questions agricoles au Togo. Cinq demandes IA par jour et par compte, partagées avec les recommandations de culture. Vos questions et les six derniers messages sont transmis à Google Gemini : n’incluez pas de données personnelles. Les réponses sont indicatives ; consultez un conseiller local avant toute décision importante.</p>
+      <p className="panel-note">Un assistant en français simple pour vos questions agricoles au Togo, sans limite quotidienne fixée par la plateforme. Google Gemini peut appliquer ses propres limites d’utilisation. Vos questions et les six derniers messages sont transmis à Google Gemini : n’incluez pas de données personnelles. Les réponses sont indicatives ; consultez un conseiller local avant toute décision importante.</p>
       <div className="assistant-messages" aria-live="polite" aria-relevant="additions">
         {conversation.length === 0 ? (
           <p className="empty-state">Exemple : « Comment conserver le maïs après la récolte ? »</p>

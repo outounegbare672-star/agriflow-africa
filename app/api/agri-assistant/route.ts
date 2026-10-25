@@ -74,18 +74,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "L’assistant est réservé aux gestionnaires de coopérative." }, { status: 403 });
   }
 
-  const allowed = await prisma.$transaction(async (tx) => {
-    const requestCount = await tx.aiRecommendationRequest.count({
-      where: { userId: session.user.id, createdAt: { gte: new Date(Date.now() - 86_400_000) } },
-    });
-    if (requestCount >= 5) return false;
-    await tx.aiRecommendationRequest.create({ data: { userId: session.user.id } });
-    return true;
-  }, { isolationLevel: "Serializable" });
-  if (!allowed) {
-    return NextResponse.json({ error: "Limite quotidienne de cinq demandes IA atteinte." }, { status: 429 });
-  }
-
   const contents = [
     ...conversation.map(({ role, content }) => ({
       role: role === "assistant" ? "model" : "user",

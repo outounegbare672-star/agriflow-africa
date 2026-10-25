@@ -35,6 +35,10 @@ export function AgriculturalAssistant() {
           conversation: conversation.slice(-6),
         }),
       });
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.includes("application/json")) {
+        throw new Error(`Le serveur a retourné une erreur (HTTP ${response.status}). Réessayez dans un moment.`);
+      }
       const result: unknown = await response.json();
       if (!response.ok || !isAnswer(result)) {
         const responseError = typeof result === "object" && result !== null &&

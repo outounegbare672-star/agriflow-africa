@@ -82,7 +82,7 @@ export async function POST(request: Request) {
     { role: "user", parts: [{ text: body.message.trim() }] },
   ];
 
-  const providerUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
+  const providerUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
   const providerRequestBody = JSON.stringify({
     systemInstruction: {
       parts: [{

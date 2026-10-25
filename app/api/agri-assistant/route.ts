@@ -5,7 +5,7 @@ import { getPrisma } from "@/lib/prisma";
 
 const maximumMessageLength = 1_000;
 const maximumHistoryLength = 6;
-const providerTimeoutMs = 60_000;
+const providerTimeoutMs = 90_000;
 
 type ConversationMessage = {
   role: "user" | "assistant";
